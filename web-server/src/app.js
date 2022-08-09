@@ -1,14 +1,26 @@
-const express = require('express')
-const path = require('path')
-const hbs = require('hbs')
+import express from 'express'
+import { join, dirname } from 'path'
+import hbs from 'hbs'
+import { fileURLToPath } from 'url'
+import geocode from './utils/geocode.js'
+import forecast from './utils/forecast.js'
+
+// finding absolute file path
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+
+// import modulejs into commonjs 
+// const geocode = import('./utils/geocode.mjs')
+// const forecast = import('./utils/forecast.mjs')
 
 // Create an Express app
 const app = express()
 
 // Define paths for express configs
-const publicDir = path.join(__dirname, '../public')
-const viewsPath = path.join(__dirname, '../templates/views')
-const partialsPath = path.join(__dirname, '../templates/partials')
+const publicDir = join(__dirname, '../public')
+const viewsPath = join(__dirname, '../templates/views')
+const partialsPath = join(__dirname, '../templates/partials')
 
 // Set up handlebars engine and views path
 app.set('view engine', 'hbs')
@@ -40,10 +52,31 @@ app.get('/about', (req, res) => {
     })
 })
 
-app.get('/weather', (req, res) => {
+app.get('/weather', async(req, res) => {
+    if (!req.query.address) {
+        return res.send({
+            error: "You must provide an address"
+        })
+    }
+
+    try {
+        const loc = await geocode(req.query.address)
+        const weather = await forecast(loc)
+        res.send(weather)
+    } catch (error) {
+        res.send({error})
+    } 
+})
+
+app.get('/products', (req, res) => {
+    if (!req.query.search) {
+        return res.send({
+            error: "You must provide a search term"
+        })
+    }
+    console.log(req.query)
     res.send({
-        location: "Chennai",
-        weather: 32
+        products: []
     })
 })
 
